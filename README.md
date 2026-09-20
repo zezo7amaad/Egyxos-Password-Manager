@@ -1,46 +1,153 @@
-# 🛡️ Egyxos - Enterprise Password Manager
+# EGYXOS Password Manager
 
-A secure, local-first desktop password manager built with Python, featuring robust encryption, password strength analysis, and Have I Been Pwned (HIBP) API breach checking. Developed by **Abdelaziz Abdelmonem Mohamed**.
+EGYXOS is evolving from a local Python desktop password manager into a
+zero-knowledge, local-first password-management platform. The repository
+contains the original desktop client plus the first web/API foundation for the
+new architecture.
 
-## 🚀 Features
-- **Local AES Encryption**: Utilizes `Fernet` (symmetric encryption via PBKDF2HMAC with SHA-256 and 100k iterations) to secure your vault locally.
-- **Master Password Verification**: Secure verifier implementation ensuring instant and reliable authentication checks.
-- **Password Strength Meter**: Real-time evaluation of password complexity (length, uppercase, lowercase, numbers, and symbols).
-- **Secure Password Generator**: Generates cryptographically secure random passwords.
-- **HIBP Integration**: Checks stored passwords against known data breaches anonymously using k-anonymity (SHA-1 hash range queries) with asynchronous threading to prevent UI freezing.
-- **Clipboard Auto-Clear**: Automatically clears sensitive copied data from the system clipboard after 20 seconds.
-- **Dynamic Themes**: Fully supports both Light and Dark modern modes via CustomTkinter.
+> **Security status:** The web foundation is an incremental development build,
+> not a production security certification. Do not use it to store real secrets
+> until the remaining authentication, persistence, synchronization, recovery,
+> and independent security-review work is complete.
 
-## Modern web foundation
+## Repository areas
 
-The repository now also contains the first increment of the redesigned
-zero-knowledge platform:
+| Path | Purpose |
+| --- | --- |
+| `main.py` | Legacy CustomTkinter desktop client and migration reference |
+| `apps/web` | Next.js, React, and TypeScript vault workspace |
+| `apps/api` | FastAPI API boundary for account and encrypted sync operations |
+| `packages/crypto` | Versioned Web Crypto AES-256-GCM envelope helpers |
+| `tools/migrate_legacy_egyxos.py` | Safe, inspection-only legacy SQLite report |
+| `docs/security` | Architecture, cryptography, and threat-model documentation |
+| `docker-compose.yml` | Local web, API, PostgreSQL, and Redis topology |
 
-- `apps/web`: Next.js/React TypeScript vault workspace matching the EGYXOS
-  dark visual language, with local filtering, item details, reveal/lock state,
-  and responsive layout.
-- `apps/api`: FastAPI boundary whose synchronization contract accepts only
-  versioned encrypted payloads; it never receives a master password or vault
-  plaintext.
-- `packages/crypto`: Web Crypto AES-256-GCM envelope helpers with version and
-  key metadata.
-- `docker-compose.yml`, `.env.example`, and security architecture documents.
+## Current web foundation
 
-The original Python client remains the legacy migration reference. The web
-foundation is intentionally not presented as production-complete until
-Argon2id calibration, PostgreSQL/Alembic repositories, sessions/MFA,
-IndexedDB persistence, organization authorization, and independent security
-review are implemented.
+The web workspace follows the supplied EGYXOS design language:
 
-## 🛠️ Tech Stack
-- **Language**: Python 3.11+
-- **GUI Framework**: CustomTkinter / Tkinter
-- **Cryptography**: `cryptography`
-- **Database**: SQLite3 (Isolated cross-platform storage in AppData)
-- **Networking**: `requests` (for HIBP API integration)
+- Near-black premium interface with thin borders and rounded panels
+- EGYXOS branding and official logo
+- Sidebar navigation for Home, Vault, Favorites, Generator, Security Center,
+  and Settings
+- Vault categories, local search, item list, favorites, item details, copy
+  actions, password reveal state, and lock overlay
+- Responsive behavior for smaller screens
 
-## 📦 Installation & Usage
-1. Clone the repository:
-   ```bash
-   git clone [https://github.com/Zezo7amaad/Egyxos-Password-Manager.git](https://github.com/Zezo7amaad/Egyxos-Password-Manager.git)
-   cd Egyxos-Password-Manager
+The API intentionally accepts opaque encrypted payloads only. It does not
+receive a master password, decrypted vault key, or plaintext vault item. The
+initial API returns explicit `501 Not Implemented` responses for persistence
+paths that have not been wired to a repository yet; it does not present mock
+sync behavior as production functionality.
+
+## Legacy desktop client
+
+The original client provides:
+
+- Local SQLite vault storage under the user application-data directory
+- Fernet encryption with PBKDF2-HMAC-SHA256
+- Password strength analysis and cryptographically secure generation
+- HIBP k-anonymity breach checks
+- Clipboard auto-clear
+- Light and dark CustomTkinter themes
+
+The legacy encryption format is retained for compatibility and migration
+reference only. It is not the target protocol for the web platform. Do not
+commit real vault databases, exports, or credentials.
+
+## Development
+
+### Web application
+
+Requirements: Node.js 20 or newer.
+
+```bash
+npm install
+npm run dev:web
+```
+
+The web application runs at `http://localhost:3000`.
+
+Useful checks:
+
+```bash
+npm run typecheck
+npm run build:web
+```
+
+### API
+
+Requirements: Python 3.11+ for local development. The container uses Python
+3.12.
+
+```bash
+python -m pip install -r apps/api/requirements.txt
+$env:PYTHONPATH = "."
+python -m uvicorn apps.api.app.main:app --reload --port 8000
+```
+
+The API runs at `http://localhost:8000`. OpenAPI documentation is available
+at `/docs` while the development server is running.
+
+### Docker Compose
+
+Copy `.env.example` to `.env`, replace development placeholders, then run:
+
+```bash
+docker compose up --build
+```
+
+The development services use ports 3000 (web), 8000 (API), 5432
+(PostgreSQL), and 6379 (Redis).
+
+## Legacy vault inspection
+
+The migration helper reports tables, columns, and record counts without
+decrypting or printing secrets:
+
+```bash
+python tools/migrate_legacy_egyxos.py path\to\egyxos_vault.db
+```
+
+Full migration must remain a local, user-authorized workflow. Plaintext
+records must be re-encrypted into the new versioned client-side format before
+any encrypted payload is uploaded.
+
+## Zero-knowledge design
+
+The intended trust boundary is:
+
+1. Account authentication is handled separately from vault unlocking.
+2. The client derives or unwraps vault keys locally after unlock.
+3. Vault data is encrypted client-side using versioned authenticated encryption.
+4. Search, password generation, and breach analysis operate locally.
+5. The server stores and synchronizes opaque encrypted revisions and metadata.
+6. Organization authorization and audit metadata are enforced server-side,
+   while shared collection contents remain encrypted.
+
+The current envelope format is documented in
+[`docs/security/cryptography.md`](docs/security/cryptography.md). The broader
+security model and limitations are documented in
+[`SECURITY.md`](SECURITY.md).
+
+## Roadmap
+
+The remaining implementation is intentionally staged:
+
+1. Add Argon2id calibration and client-side key hierarchy.
+2. Add PostgreSQL models, Alembic migrations, repositories, and real revision
+   conflict handling.
+3. Add secure sessions, registration, email verification, MFA, devices, and
+   rate limiting.
+4. Add IndexedDB encrypted local persistence, offline mutation queues, and
+   incremental synchronization.
+5. Add vault item CRUD for logins, cards, identities, and secure notes.
+6. Add organizations, collections, RBAC, encrypted sharing, and audit logs.
+7. Add migration re-encryption, automated security tests, monitoring,
+   encrypted backups, and production deployment controls.
+
+## Security reporting
+
+Please do not disclose suspected vulnerabilities in public issues. Review
+[`SECURITY.md`](SECURITY.md) for the current security model and report
+security-sensitive findings privately to the repository maintainer.
