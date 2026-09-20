@@ -5,5 +5,6 @@
   "type": "module",
   "exports": {
     ".": "./src/envelope.ts"
-  }
+  },
+  "types": "./src/envelope.ts"
 }

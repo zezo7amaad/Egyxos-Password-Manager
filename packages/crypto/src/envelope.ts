@@ -10,18 +10,22 @@ export type EncryptedEnvelope = {
 const encoder = new TextEncoder();
 const decoder = new TextDecoder();
 
-function encode(value: ArrayBuffer): string {
-  return btoa(String.fromCharCode(...new Uint8Array(value)));
+function encode(value: ArrayBuffer | Uint8Array): string {
+  return btoa(String.fromCharCode(...new Uint8Array(value instanceof ArrayBuffer ? value : asArrayBuffer(value))));
 }
 
 function decode(value: string): Uint8Array {
   return Uint8Array.from(atob(value), (character) => character.charCodeAt(0));
 }
 
+function asArrayBuffer(value: Uint8Array): ArrayBuffer {
+  return value.slice().buffer;
+}
+
 export async function deriveVaultKey(masterKeyMaterial: Uint8Array, salt: Uint8Array): Promise<CryptoKey> {
-  const baseKey = await crypto.subtle.importKey("raw", masterKeyMaterial, "HKDF", false, ["deriveKey"]);
+  const baseKey = await crypto.subtle.importKey("raw", asArrayBuffer(masterKeyMaterial), "HKDF", false, ["deriveKey"]);
   return crypto.subtle.deriveKey(
-    { name: "HKDF", hash: "SHA-256", salt, info: encoder.encode("egyxos/vault-key/v1") },
+    { name: "HKDF", hash: "SHA-256", salt: asArrayBuffer(salt), info: asArrayBuffer(encoder.encode("egyxos/vault-key/v1")) },
     baseKey,
     { name: "AES-GCM", length: 256 },
     false,
@@ -37,7 +41,7 @@ export async function encryptPayload(
   const nonce = crypto.getRandomValues(new Uint8Array(12));
   const aad = associatedData ? encoder.encode(associatedData) : undefined;
   const ciphertext = await crypto.subtle.encrypt(
-    { name: "AES-GCM", iv: nonce, additionalData: aad },
+    { name: "AES-GCM", iv: asArrayBuffer(nonce), additionalData: aad ? asArrayBuffer(aad) : undefined },
     key,
     encoder.encode(JSON.stringify(payload))
   );
@@ -58,11 +62,11 @@ export async function decryptPayload<T>(key: CryptoKey, envelope: EncryptedEnvel
   const plaintext = await crypto.subtle.decrypt(
     {
       name: "AES-GCM",
-      iv: decode(envelope.nonce),
-      additionalData: envelope.associatedData ? encoder.encode(envelope.associatedData) : undefined
+      iv: asArrayBuffer(decode(envelope.nonce)),
+      additionalData: envelope.associatedData ? asArrayBuffer(encoder.encode(envelope.associatedData)) : undefined
     },
     key,
-    decode(envelope.ciphertext)
+    asArrayBuffer(decode(envelope.ciphertext))
   );
   return JSON.parse(decoder.decode(plaintext)) as T;
 }

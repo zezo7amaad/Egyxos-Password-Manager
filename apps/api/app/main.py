@@ -3,6 +3,7 @@ from typing import Annotated
 from uuid import UUID
 
 from fastapi import Depends, FastAPI, Header, HTTPException, Query, status
+from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel, ConfigDict, EmailStr, Field
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -16,6 +17,13 @@ app = FastAPI(
     title="EGYXOS API",
     version="1.0.0",
     description="Account and encrypted-vault synchronization API. Vault contents are never decrypted here.",
+)
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["http://localhost:3000"],
+    allow_credentials=False,
+    allow_methods=["GET", "POST"],
+    allow_headers=["Authorization", "Content-Type"],
 )
 
 
