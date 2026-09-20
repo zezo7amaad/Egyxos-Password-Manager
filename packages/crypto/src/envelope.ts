@@ -33,6 +33,22 @@ export async function deriveVaultKey(masterKeyMaterial: Uint8Array, salt: Uint8A
   );
 }
 
+export async function deriveKeyFromPassword(password: string, salt: Uint8Array): Promise<CryptoKey> {
+  const passwordKey = await crypto.subtle.importKey(
+    "raw",
+    asArrayBuffer(encoder.encode(password)),
+    "PBKDF2",
+    false,
+    ["deriveBits"]
+  );
+  const masterMaterial = await crypto.subtle.deriveBits(
+    { name: "PBKDF2", hash: "SHA-256", salt: asArrayBuffer(salt), iterations: 600_000 },
+    passwordKey,
+    256
+  );
+  return deriveVaultKey(new Uint8Array(masterMaterial), salt);
+}
+
 export async function encryptPayload(
   key: CryptoKey,
   payload: unknown,
