@@ -12,6 +12,7 @@ __pycache__/
 .pytest_cache/
 node_modules/
 .next/
+*.tsbuildinfo
 apps/web/out/
 
 # Packaged desktop artifacts
