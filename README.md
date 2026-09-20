@@ -34,11 +34,12 @@ The web workspace follows the supplied EGYXOS design language:
   actions, password reveal state, and lock overlay
 - Responsive behavior for smaller screens
 
-The API intentionally accepts opaque encrypted payloads only. It does not
-receive a master password, decrypted vault key, or plaintext vault item. The
-initial API returns explicit `501 Not Implemented` responses for persistence
-paths that have not been wired to a repository yet; it does not present mock
-sync behavior as production functionality.
+The API accepts opaque encrypted payloads only. It does not receive a master
+password, decrypted vault key, or plaintext vault item. Account registration
+and login use Argon2id verifiers and randomly generated, database-backed
+opaque session tokens (only token hashes are persisted). PostgreSQL stores
+encrypted vault revisions and rejects stale or out-of-order mutations with a
+revision conflict response.
 
 ## Legacy desktop client
 
@@ -135,11 +136,8 @@ security model and limitations are documented in
 The remaining implementation is intentionally staged:
 
 1. Add Argon2id calibration and client-side key hierarchy.
-2. Add PostgreSQL models, Alembic migrations, repositories, and real revision
-   conflict handling.
-3. Add secure sessions, registration, email verification, MFA, devices, and
-   rate limiting.
-4. Add IndexedDB encrypted local persistence, offline mutation queues, and
+2. Add email verification, MFA, rate limiting, and device revocation.
+3. Add IndexedDB encrypted local persistence, offline mutation queues, and
    incremental synchronization.
 5. Add vault item CRUD for logins, cards, identities, and secure notes.
 6. Add organizations, collections, RBAC, encrypted sharing, and audit logs.
