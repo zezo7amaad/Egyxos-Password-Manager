@@ -1,0 +1,19 @@
+# Runtime secrets and local vault state
+.env
+.env.*
+!.env.example
+*.db
+*.sqlite
+vault.json
+
+# Generated Python and frontend artifacts
+__pycache__/
+*.py[cod]
+.pytest_cache/
+node_modules/
+.next/
+apps/web/out/
+
+# Packaged desktop artifacts
+build/
+dist/

@@ -11,6 +11,27 @@ A secure, local-first desktop password manager built with Python, featuring robu
 - **Clipboard Auto-Clear**: Automatically clears sensitive copied data from the system clipboard after 20 seconds.
 - **Dynamic Themes**: Fully supports both Light and Dark modern modes via CustomTkinter.
 
+## Modern web foundation
+
+The repository now also contains the first increment of the redesigned
+zero-knowledge platform:
+
+- `apps/web`: Next.js/React TypeScript vault workspace matching the EGYXOS
+  dark visual language, with local filtering, item details, reveal/lock state,
+  and responsive layout.
+- `apps/api`: FastAPI boundary whose synchronization contract accepts only
+  versioned encrypted payloads; it never receives a master password or vault
+  plaintext.
+- `packages/crypto`: Web Crypto AES-256-GCM envelope helpers with version and
+  key metadata.
+- `docker-compose.yml`, `.env.example`, and security architecture documents.
+
+The original Python client remains the legacy migration reference. The web
+foundation is intentionally not presented as production-complete until
+Argon2id calibration, PostgreSQL/Alembic repositories, sessions/MFA,
+IndexedDB persistence, organization authorization, and independent security
+review are implemented.
+
 ## 🛠️ Tech Stack
 - **Language**: Python 3.11+
 - **GUI Framework**: CustomTkinter / Tkinter
